@@ -82,9 +82,7 @@ class ShipEnv(gym.Env):
         self.velocity = velocity
         
         # 자선의 각도
-        # 오른쪽 angle = 270 ~ 360
-        # 왼쪽 angle = 0 ~ 90
-        # 직진 angle = 0
+       
         self.angle = 0
         self.min_angle = -90
         self.max_angle = 90
@@ -95,13 +93,10 @@ class ShipEnv(gym.Env):
         # self.T_x = 100 # 자선의 추력
         # self.T_n = 50 # 자선의 추력
         
+        # 가속도와 속도 초기화
         self.u = 0 # 속도
         self.v = 0
         self.r = 0  # d_deg/dt
-        
-        # self.u_dot = -1.091 * self.u + 0.0028 * self.T_x
-        # self.v_dot = 0.0161 * self.v - 0.0052 * self.r + 0.0002 * self.T_n
-        # self.r_dot = 8.2681 * self.v - 0.9860 * self.r + 0.0307 * self.T_n
         
         self.u_dot = 0
         self.v_dot = 0
@@ -113,7 +108,7 @@ class ShipEnv(gym.Env):
         
         # Goal
         self.goal_x = self.screen_width /2
-        self.goal_y = 770
+        self.goal_y = 30
         
         # Path
         #self.path 
@@ -144,9 +139,20 @@ class ShipEnv(gym.Env):
         
         '''
         
+        
         # 추후 action에 따라 Tx, Tn 정의
-        action_Tx = 0
-        action_Tn = 50
+        if action == 0:
+            action_Tx = 200
+            action_Tn = 0
+        
+        elif action ==1:
+            action_Tx = 0
+            action_Tn = 10
+        
+        elif action ==2:
+            action_Tx = 50
+            action_Tn = 20
+            
 
         self.r_dot = 8.2681 * self.v - 0.9860 * self.r + 0.0307 * action_Tn
         self.v_dot = 0.0161 * self.v - 0.0052 * self.r + 0.0002 * action_Tn
@@ -217,7 +223,7 @@ class ShipEnv(gym.Env):
         pygame.draw.line(self.surf, (0,0,255),[screen_width/2,0],[screen_width/2,screen_height],3)
         
         # Goal 그리기
-        pygame.draw.circle(self.surf, (255,0,0), (self.goal_x, self.goal_y), 15)
+        pygame.draw.circle(self.surf, (255,0,0), (self.goal_x, 770), 15)
         
         # 자선 그리기
         '''

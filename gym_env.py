@@ -82,7 +82,6 @@ class ShipEnv(gym.Env):
         self.velocity = velocity
         
         # 자선의 각도
-       
         self.angle = 0
         self.min_angle = -90
         self.max_angle = 90
@@ -90,8 +89,8 @@ class ShipEnv(gym.Env):
         # action 및 step function에서 쓰일 각도, 속도 변환을 위한 Dynamics
         self.dt = 1
         
-        # self.T_x = 100 # 자선의 추력
-        # self.T_n = 50 # 자선의 추력
+        # 자선의 Beam
+        self.beam = 2.5
         
         # 가속도와 속도 초기화
         self.u = 0 # 속도
@@ -139,21 +138,30 @@ class ShipEnv(gym.Env):
         
         '''
         
+        action_Tx = 100
+        action_Tn = 0
         
         # 추후 action에 따라 Tx, Tn 정의
-        if action == 0:
-            action_Tx = 200
-            action_Tn = 0
+        # if action == 0:
+        #     self.action = action
+        #     # T_l = 50
+        #     # T_r = 50
+        #     action_Tx = 200
+        #     action_Tn = 50
         
-        elif action ==1:
-            action_Tx = 0
-            action_Tn = 10
+        # elif action ==1:
+        #     self.action = action
+        #     # T_l = 50 
+        #     # T_r = 0
         
-        elif action ==2:
-            action_Tx = 50
-            action_Tn = 20
+        # elif action ==2:
+        #     self.action = action
+        #     # T_l = 0
+        #     # T_r = 50
             
-
+        # action_Tx = T_l + T_r
+        # action_Tn = (T_l + T_r) * self.beam / 2
+        
         self.r_dot = 8.2681 * self.v - 0.9860 * self.r + 0.0307 * action_Tn
         self.v_dot = 0.0161 * self.v - 0.0052 * self.r + 0.0002 * action_Tn
         self.u_dot = -1.091 * self.u + 0.0028 * action_Tx

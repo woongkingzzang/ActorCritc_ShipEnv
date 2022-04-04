@@ -82,6 +82,7 @@ class ShipEnv(gym.Env):
         self.max_position_y = self.screen_height
         self.position_x = self.screen_width/2
         self.position_y = self.screen_height - 30
+        
         # 자선의 속도
         self.min_speed = 0
         self.max_speed = 2
@@ -121,13 +122,13 @@ class ShipEnv(gym.Env):
         self.clock  = None
         self.isopen = True
     
-        
         self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
         
     def step(self, action):
         
         '''
+        
         물리 모델애 대한 정의를 해놓은 부분 from 희수형님
         
         질문사항
@@ -147,22 +148,23 @@ class ShipEnv(gym.Env):
         # action_Tx = 1000
         # action_Tn = 50
         
-        self.sigma_m = 0.7
-        self.sigma_d = 0.3
-        self.sigma_max = 2380
+        self.RPM_m = 1
+        self.RPM_d = 0
+        self.RPM_max = 2380
         
         # RPM_l = 2000
         # RPM_r = 2000
         # RPM_max = 2380
         
-        RPM_l = self.sigma_max*(self.sigma_m + self.sigma_d)
-        RPM_r = self.sigma_max*(self.sigma_m - self.sigma_d)
+        RPM_l = self.RPM_max*(self.RPM_m + self.RPM_d)
+        RPM_r = self.RPM_max*(self.RPM_m - self.RPM_d)
         
         if RPM_l >= 0:
             T_l = 3.54 * (10**(-5)) * (RPM_l ** 2) + 0.084 * RPM_l - 3.798
         else:
             T_l = -1.189 * (10**(-5)) * (RPM_l ** 2) + 0.071 * RPM_l + 4.331
-            
+        
+        
         if RPM_r >= 0:
             T_r = 3.54 * (10**(-5)) * (RPM_r ** 2) + 0.084 * RPM_r - 3.798
         else:
@@ -208,11 +210,9 @@ class ShipEnv(gym.Env):
         self.u = self.u_dot * self.dt
 
         # local
-        self.velocity = math.sqrt(math.pow(self.u, 2) + math.pow(self.v, 2))
         angle = self.r * self.dt
-        
         self.angle += angle
-
+        
         # y = self.v * self.dt
         # x = self.u * self.dt
         self.V_x = self.u * math.cos(self.angle) - self.v * math.sin(self.angle)
@@ -227,7 +227,7 @@ class ShipEnv(gym.Env):
         self.position_x += self.V_x * self.dt
         self.position_y += self.V_y * self.dt
 
-        self.velocity = math.sqrt(math.pow(self.u, 2) + math.pow(self.v, 2))
+        self.velocity = math.sqrt(math.pow(self.V_x, 2) + math.pow(self.V_y, 2))
 
         done = bool(self.position_x == self.goal_x and self.position_y == self.goal_y)
         reward = - 1.0  # mountain car에서 일단 가져옴
@@ -257,8 +257,8 @@ class ShipEnv(gym.Env):
         pygame좌표계를 우주현 교수님 좌표계와 통일
         x축: 오른쪽으로 +y
         y축: 아래쪽으로 +x 
-        
         '''
+        
         screen_width = self.screen_width
         screen_height = self.screen_height
         
@@ -291,7 +291,7 @@ class ShipEnv(gym.Env):
         '''
         
         center = (self.state[1] - 370 , -self.state[0]+ 1600 )
-        scale =8
+        scale = 8
         self.os_img: pygame.Surface = pygame.image.load("./self_ship.png") 
         
         

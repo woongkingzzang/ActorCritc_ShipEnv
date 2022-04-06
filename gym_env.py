@@ -1,32 +1,6 @@
-import math
-from this import d
-
-from turtle import position
-from typing import Optional
-from defusedxml import DTDForbidden
-
-import numpy as np
-import pygame
-from pygame import gfxdraw
-
-# Standard Module
-import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
-
-from random import randrange # random.randrange(a,b) : a이상 b미만
-
-
 '''
-디버깅을 위한 논리적 접근
-1. 시각화 => 도메인 초기화, 레고 블럭 쌓는 식으로 위에다 쌓기 => 완료
-2. 운동 모델 => 모델 식 비교
-3. RPM
-'''
+ShipEnv-ActorCritic
 
-class ShipEnv(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
-    '''
     단계별 개발
      step 1. Goal만 있는 환경 => 진행중
      step 2. Goal + Static Obstacle
@@ -65,13 +39,48 @@ class ShipEnv(gym.Env):
     v_dot = 0.0161 * v - 0.0052 * r + 0.0002 * T_n
     r_dot = 8.2861 * v - 0.9860 * r + 0.0307 * T_n
     
-    차후 원하는 실험 선박에 맞춰 바꿔야함
-    '''
+    차후 원하는 실험 선박에 맞춰 바꿔야함 
+    
+    ** 해결된 문제 **
+    - 선박의 운동 모델 반영
+    - 선체 고정 좌표계 + 회전 좌표계 -> 지구 고정 좌표계
+    - math.sin, cos에서 deg가 아닌 rad를 사용
+    
+    
+    ** 해결할 문제 **  
+    - rotate_matrix를 만들어서 아래 한줄 한줄 적은 코드들을 깔끔하게 고칠 수 있음
+    - action에 따른 Tx, Tn 값 정하기
+    - 동훈이형이 KASS 운동 모델 , Velocity Obstacle 반영
+'''
+
+import math
+from this import d
+
+from turtle import position
+from typing import Optional
+from defusedxml import DTDForbidden
+
+import numpy as np
+import pygame
+from pygame import gfxdraw
+
+# Standard Module
+import gym
+from gym import error, spaces, utils
+from gym.utils import seeding
+
+from random import randrange # random.randrange(a,b) : a이상 b미만
+
+
+class ShipEnv(gym.Env):
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
+
     
     def __init__(self):
         # screen
         self.screen_width = 1300
         self.screen_height = 800
+        
         # observation = [자선의 정보, static_obstacle, dynamic_obstacle]
         # state = [자선의 속도, 각도, 포지션]
         
@@ -99,6 +108,10 @@ class ShipEnv(gym.Env):
         # 자선의 Beam
         self.beam = 2.5
         
+        '''
+        이렇게 변수는 보기 좋게 모아두고 정의할 필요가 있음
+        ''' 
+        
         # 가속도와 속도 초기화
         # Local coordinate
         self.x, self.y, self.angle = 0, 0, 0
@@ -112,8 +125,8 @@ class ShipEnv(gym.Env):
         self.high = np.array([self.max_position_x, self.max_position_y, self.max_speed, self.max_angle], dtype=np.float32)
         
         # Goal
-        self.goal_x = self.screen_width - 1200
-        self.goal_y = self.screen_height/2
+        self.goal_x = self.screen_width - 100 # goal_x = 1200
+        self.goal_y = self.screen_height/2 # goal_y = 400
         
         # Path
         #self.path 
@@ -125,25 +138,8 @@ class ShipEnv(gym.Env):
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
 
     def step(self, action):
-        
-        '''
-        
-        물리 모델애 대한 정의를 해놓은 부분 from 희수형님
-        
-        질문사항
-        1. action에 대한 처리 (input으로 action이 정의되어져 있지만, action을 어떻게 처리하는지)
-        답변: 당장은 action은 고려 x, 다이나믹스 먼저 정의
-        2. position부분 정의
-        답변: 선체고정좌표계와 지구고정좌표계를 통해 정의
-        
-        
-        필요 수정 사항
-        - rotate_matrix를 만들어서 아래 한줄 한줄 적은 코드들을 깔끔하게 고칠 수 있음
-        - action에 따른 Tx, Tn 값 정하기
-        - 동훈이형이 KASS 운동 모델 , Velocity Obstacle 반영
-        
-        '''
-        
+
+        # Thrust_port, Thrust_starboard
         T_l = 10
         T_r = 10.0001
 
@@ -162,18 +158,24 @@ class ShipEnv(gym.Env):
         self.angle += self.r * self.dt  # deg
         self.y += self.v * self.dt
         self.x += self.u * self.dt
-
+        
+        '''
+        중요한점!! math.cos, math.sin은 rad을 사용!!
+        '''
+        
         # Rotated coordinate
         self.psi += self.angle * 180 / math.pi # deg to rad
-        self.X = self.x * math.cos(self.psi) - self.y * math.sin(self.psi)
+        self.X = self.x * math.cos(self.psi) - self.y * math.sin(self.psi) 
         self.Y = self.x * math.sin(self.psi) + self.y * math.cos(self.psi)
 
         # Global position
         self.position_x += self.X
         self.position_y += self.Y
-
+        
+        # velocity
         self.velocity = math.sqrt(math.pow(self.u, 2) + math.pow(self.v, 2))
-
+    
+        # reward 
         done = bool(self.position_x == self.goal_x and self.position_y == self.goal_y)
         reward = - 1.0  # mountain car에서 일단 가져옴
 
@@ -182,7 +184,7 @@ class ShipEnv(gym.Env):
         return np. array(self.state, dtype=np.float32), reward, done, {}
      
     def reset(
-        self,
+        self, 
         *,
         seed: Optional[int] = None,
         return_info: bool = False,
@@ -220,9 +222,13 @@ class ShipEnv(gym.Env):
         
          # Path 그리기
         pygame.draw.line(self.surf, (0,0,255),[screen_height/2,0],[screen_height/2,screen_width],3)
+
+       
         
-        # Goal 그리기
-        pygame.draw.circle(self.surf, (255,0,0), (self.goal_y, self.goal_x), 15)
+        # Goal 그리기 
+        visual_goal_x = self.goal_x - 1100 # visual goal = 100
+        visual_goal_y = self.goal_y
+        pygame.draw.circle(self.surf, (255,0,0), (visual_goal_y, visual_goal_x), 15)
 
         # 자선 그리기
         
@@ -231,17 +237,11 @@ class ShipEnv(gym.Env):
         *** 이 부분이 pygame과 우주현 교수님 논문 좌표를 통일한 부분 ***
         중요한 점은 따로 함수를 통한 회전이 아닌 center에서 좌표를 변환하여 주었다는 점
         
-        문제점 발견: pygame창에서는 좌표계 변환이 이루어지지 않음
-        
         '''
-        
+        print(self.state)
         center = (self.state[1] - 370 , -self.state[0]+ 1600 )
         scale = 8
         self.os_img: pygame.Surface = pygame.image.load("./self_ship.png")
-
-        '''
-        이미지 대신 막대기 또는 점으로 확인 => 중심점만 계속 표시하는 것으로 확정
-        '''
         
         self.ship_size = [i//scale for i in self.os_img.get_size()]
         self.os_img: pygame.Surface = pygame.transform.scale(self.os_img, self.ship_size)

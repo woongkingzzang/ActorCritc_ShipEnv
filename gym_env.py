@@ -1,56 +1,62 @@
 '''
-ShipEnv-ActorCritic
+    ShipEnv-ActorCritic
 
-    단계별 개발
+    ** 단계별 개발 **
      step 1. Goal만 있는 환경 => 진행중
      step 2. Goal + Static Obstacle
      step 3. Goal + Static + Dynamic Obstacle
     
 
-    from 우주현 교수님 논문
+    ** 환경 설계 from 우주현 교수님 논문 **
     
-    1. observation 
-    - 무인 수상선이 추종하는 경로 정보
-    - 동적 장애물 정보
-    - 정적 장애물 정보
-    이 부분에 대해 grid 좌표로써 나타냄
-    => 각, 포지션 (자선), 
-    
-    2. action
-    from Velocity Obstacle + COLREGs Rule
-    - 무인 수상선의 경로 추정
-    - 좌현변침을 통한 장애물 회피
-    - 우현변침을 통한 장애물 회피
-    
-    경로 추정의 경우, 목표 침로각 수식을 활용
-    
-    3. reward
-    - 경로 추정에 따른 양의 보상
-    - 충돌 회피 성공에 따른 양의 보상
-    - 충돌에 따른 음의 보상
+        1. observation 
+        - 무인 수상선이 추종하는 경로 정보
+        - 동적 장애물 정보
+        - 정적 장애물 정보
+        이 부분에 대해 grid 좌표로써 나타냄
+        => 각, 포지션 (자선), 
+        
+        2. action
+        from Velocity Obstacle + COLREGs Rule
+        - 무인 수상선의 경로 추정
+        - 좌현변침을 통한 장애물 회피
+        - 우현변침을 통한 장애물 회피
+        
+        경로 추정의 경우, 목표 침로각 수식을 활용
+        
+        3. reward
+        - 경로 추정에 따른 양의 보상
+        - 충돌 회피 성공에 따른 양의 보상
+        - 충돌에 따른 음의 보상
 
-    reward 수식을 활용
+        reward 수식을 활용
+        
+        4. Transition Dynamics
+        논문 5.1 부분을 확인해보면 됨
+        자선: WAM-V 16
+        *** Dynamics 수식 ***
+        u_dot = -1.091 * u + 0.0028 * T_x 
+        v_dot = 0.0161 * v - 0.0052 * r + 0.0002 * T_n
+        r_dot = 8.2861 * v - 0.9860 * r + 0.0307 * T_n
+        
+        차후 원하는 실험 선박에 맞춰 바꿔야함 
     
-    4. Transition Dynamics
-    논문 5.1 부분을 확인해보면 됨
-    자선: WAM-V 16
-    *** Dynamics 수식 ***
-    u_dot = -1.091 * u + 0.0028 * T_x 
-    v_dot = 0.0161 * v - 0.0052 * r + 0.0002 * T_n
-    r_dot = 8.2861 * v - 0.9860 * r + 0.0307 * T_n
-    
-    차후 원하는 실험 선박에 맞춰 바꿔야함 
+    ** 현재 단계 **
+        - step 1
+        - Dynamics : WAM-V 16
+        - state = [x, y, velocity, angle(rad)]
     
     ** 해결된 문제 **
-    - 선박의 운동 모델 반영
-    - 선체 고정 좌표계 + 회전 좌표계 -> 지구 고정 좌표계
-    - math.sin, cos에서 deg가 아닌 rad를 사용
+        - 선박의 운동 모델 반영
+        - 선체 고정 좌표계 + 회전 좌표계 -> 지구 고정 좌표계
+        - math.sin, cos에서 deg가 아닌 rad를 사용
     
     
     ** 해결할 문제 **  
-    - rotate_matrix를 만들어서 아래 한줄 한줄 적은 코드들을 깔끔하게 고칠 수 있음
-    - action에 따른 Tx, Tn 값 정하기
-    - 동훈이형이 KASS 운동 모델 , Velocity Obstacle 반영
+        - rotate_matrix를 만들어서 아래 한줄 한줄 적은 코드들을 깔끔하게 고칠 수 있t음
+        - action에 따른 Tx, Tn 값 정하기
+        - 동훈이형이 KASS 운동 모델 , COLREGs 반영 (최소 2~3단계)
+    
 '''
 
 import math
@@ -78,7 +84,7 @@ class ShipEnv(gym.Env):
     
     def __init__(self):
         # screen
-        self.screen_width = 1300
+        self.screen_width = 900
         self.screen_height = 800
         
         # observation = [자선의 정보, static_obstacle, dynamic_obstacle]
@@ -91,7 +97,7 @@ class ShipEnv(gym.Env):
         self.max_position_y = self.screen_height
         self.position_x = self.screen_width/2
         self.position_y = self.screen_height - 30
-        self.psi = math.pi/2    # rad
+        self.psi = self.deg2rad(0)    # rad
         
         # 자선의 속도
         self.min_speed = 0
@@ -125,11 +131,10 @@ class ShipEnv(gym.Env):
         self.high = np.array([self.max_position_x, self.max_position_y, self.max_speed, self.max_angle], dtype=np.float32)
         
         # Goal
-        self.goal_x = self.screen_width - 100 # goal_x = 1200
+        self.goal_x = self.screen_width - 100 # goal_x = 800
         self.goal_y = self.screen_height/2 # goal_y = 400
         
         # Path
-        #self.path 
         self.screen = None
         self.clock  = None
         self.isopen = True
@@ -141,8 +146,20 @@ class ShipEnv(gym.Env):
 
         # Thrust_port, Thrust_starboard
         T_l = 10
-        T_r = 10.0001
-
+        T_r = 10
+        
+        # action
+        if action == 0 :
+            T_l = T_r
+            T_r = T_l
+            
+        elif action == 1: # 우현회침
+            T_l += 0.0001
+        
+        elif action == 2: # 좌현회침
+            T_r += 0.0001
+        
+        self.action = action
         action_Tx = T_l +  T_r
         action_Tn = (T_l - T_r) * self.beam / 2
         
@@ -160,7 +177,9 @@ class ShipEnv(gym.Env):
         self.x += self.u * self.dt
         
         '''
+        
         중요한점!! math.cos, math.sin은 rad을 사용!!
+        
         '''
         
         # Rotated coordinate
@@ -175,10 +194,22 @@ class ShipEnv(gym.Env):
         # velocity
         self.velocity = math.sqrt(math.pow(self.u, 2) + math.pow(self.v, 2))
     
-        # reward 
-        done = bool(self.position_x == self.goal_x and self.position_y == self.goal_y)
-        reward = - 1.0  # mountain car에서 일단 가져옴
-
+        # reward
+        
+        done = bool(self.position_x == self.goal_x and self.position_y == self.goal_y
+                    or self.position_x  >= self.screen_width
+                    or self.position_x <= 0
+                    or self.position_y  >= self.screen_height
+                    or self.position_y  <= 0
+                    )
+        if not done:
+            reward = 0.0
+        else:
+            if self.position_x == self.goal_x and self.position_y == self.goal_y:
+                reward = 1.0
+            else:
+                reward = -1.0
+        
         self.state = (self.position_x, self.position_y, self.velocity, self.psi)
 
         return np. array(self.state, dtype=np.float32), reward, done, {}
@@ -194,7 +225,7 @@ class ShipEnv(gym.Env):
         self.state = np.array([self.np_random.uniform(low=650, high=660), self.np_random.uniform(low=770, high=780), 1.5, 0])
         if not return_info:
             return np.array(self.state, dtype=np.float32)
-        else:
+        else: 
             return np.array(self.state, dtype=np.float32), {}
         
         
@@ -226,7 +257,7 @@ class ShipEnv(gym.Env):
        
         
         # Goal 그리기 
-        visual_goal_x = self.goal_x - 1100 # visual goal = 100
+        visual_goal_x = 100 # visual goal = 100
         visual_goal_y = self.goal_y
         pygame.draw.circle(self.surf, (255,0,0), (visual_goal_y, visual_goal_x), 15)
 
@@ -238,8 +269,8 @@ class ShipEnv(gym.Env):
         중요한 점은 따로 함수를 통한 회전이 아닌 center에서 좌표를 변환하여 주었다는 점
         
         '''
-        print(self.state)
-        center = (self.state[1] - 370 , -self.state[0]+ 1600 )
+        # print(self.state)
+        center = (self.state[1] - 370 , -self.state[0]+ 1000 )
         scale = 8
         self.os_img: pygame.Surface = pygame.image.load("./self_ship.png")
         
@@ -261,7 +292,8 @@ class ShipEnv(gym.Env):
         self.screen.blit(self.surf,(0,0))
         self.screen.blit(self.os_img, self.rect)
 
-        print("center, self.state[3]: ", center, self.state[3])
+        # print("center, self.state[3]: ", center, self.state[3])
+        # print(self.action)
         
         if mode == "human":
             self.clock.tick(self.metadata["render_fps"])
@@ -287,4 +319,3 @@ class ShipEnv(gym.Env):
     def deg2rad(self,deg):
         rad = math.pi/180 * deg
         return rad
-    

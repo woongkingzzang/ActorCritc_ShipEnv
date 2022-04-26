@@ -8,10 +8,10 @@ register(
 )
 
 env = gym.make('ShipEnv-v0')
-# env = gym.make('MountainCar-v0')
 env.reset()
 
-for _ in range(1000):
+for _ in range(2000):
     env.render()
     env.step(env.action_space.sample())
+    
 env.close()

@@ -16,12 +16,13 @@ import collections
 from time import time
 import numpy as np
 import tensorflow as tf
+# from tensorflow import keras
 import tqdm
 import gym
-import keras
+# import keras
 
 from matplotlib import pyplot as plt
-from keras import layers
+from tensorflow.keras import layers
 from typing import Any, List, Sequence, Tuple
 
 from gym.envs.registration import register
@@ -219,7 +220,6 @@ with tqdm.trange(max_episodes) as t:
         initial_state, model, optimizer, gamma, max_steps_per_episode))
     
     running_reward = episode_reward*0.01 + running_reward*.99
-  
     t.set_description(f'Episode {i}')
     t.set_postfix(
         episode_reward=episode_reward, running_reward=running_reward)

@@ -13,5 +13,8 @@ env.reset()
 for _ in range(2000):
     env.render()
     env.step(env.action_space.sample())
+    # state, reward, done, _ = env.step(env.action_space())
+    # if done:
+        # env.reset()
     
 env.close()

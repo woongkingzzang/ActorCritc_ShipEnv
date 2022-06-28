@@ -28,7 +28,6 @@
         - 경로 추정에 따른 양의 보상
         - 충돌 회피 성공에 따른 양의 보상
         - 충돌에 따른 음의 보상
-
         reward 수식을 활용
         
         4. Transition Dynamics
@@ -60,9 +59,9 @@
 '''
 
 import math
-from this import d
+# from this import d
 
-from turtle import position
+# from turtle import position
 from typing import Optional
 from defusedxml import DTDForbidden
 
@@ -153,10 +152,10 @@ class ShipEnv(gym.Env):
             T_l = T_r
             T_r = T_l
             
-        elif action == 1: # 우현회침
+        elif action == 1: # 우현
             T_l += 0.0001
         
-        elif action == 2: # 좌현회침
+        elif action == 2: # 좌현
             T_r += 0.0001
         
         self.action = action
@@ -196,16 +195,19 @@ class ShipEnv(gym.Env):
     
         # reward
         
-        done = bool(self.position_x == self.goal_x and self.position_y == self.goal_y
-                    or self.position_x  >= self.screen_width
-                    or self.position_x <= 0
-                    or self.position_y  >= self.screen_height
-                    or self.position_y  <= 0
+        pos_x = -self.position_x + 1000
+        pos_y = self.position_y - 370
+        done = bool(pos_x == self.goal_x and pos_y == self.goal_y
+                    or pos_x  >= self.screen_width
+                    or pos_x <= 0
+                    or pos_y  >= self.screen_height
+                    or pos_y <= 0
                     )
+
         if not done:
             reward = 0.0
         else:
-            if self.position_x == self.goal_x and self.position_y == self.goal_y:
+            if pos_x == self.goal_x and pos_y== self.goal_y:
                 reward = 1.0
             else:
                 reward = -1.0
@@ -227,8 +229,7 @@ class ShipEnv(gym.Env):
             return np.array(self.state, dtype=np.float32)
         else: 
             return np.array(self.state, dtype=np.float32), {}
-        
-        
+          
     def render(self, mode= 'human'):
         
         '''

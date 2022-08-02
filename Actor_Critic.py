@@ -219,17 +219,15 @@ with tqdm.trange(max_episodes) as t:
     episode_reward = int(train_step(
         initial_state, model, optimizer, gamma, max_steps_per_episode))
     
-    running_reward = episode_reward*0.01 + running_reward*.99
+    running_reward = episode_reward*0.01 + running_reward*0.99
     t.set_description(f'Episode {i}')
     t.set_postfix(
         episode_reward=episode_reward, running_reward=running_reward)
-    
     env.render()
-
     if i % 10 == 0:
       pass # print(f'Episode {i}: average reward: {avg_reward}')
   
     if running_reward > reward_threshold:  
         break
-
+    
 print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')

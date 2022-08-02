@@ -194,7 +194,6 @@ class ShipEnv(gym.Env):
         self.velocity = math.sqrt(math.pow(self.u, 2) + math.pow(self.v, 2))
     
         # reward
-        
         pos_x = -self.position_x + 1000
         pos_y = self.position_y - 370
         done = bool(pos_x == self.goal_x and pos_y == self.goal_y
@@ -205,7 +204,9 @@ class ShipEnv(gym.Env):
                     )
 
         if not done:
-            reward = 0.0
+            reward = 0.3
+            if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
+                reward = 0.7
         else:
             if pos_x == self.goal_x and pos_y== self.goal_y:
                 reward = 1.0
@@ -214,7 +215,7 @@ class ShipEnv(gym.Env):
         
         self.state = (self.position_x, self.position_y, self.velocity, self.psi)
 
-        return np. array(self.state, dtype=np.float32), reward, done, {}
+        return np.array(self.state, dtype=np.float32), reward, done, {}
      
     def reset(
         self, 

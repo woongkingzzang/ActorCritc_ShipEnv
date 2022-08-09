@@ -73,15 +73,15 @@ from pygame import gfxdraw
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
-
 from random import randrange # random.randrange(a,b) : a이상 b미만
-
+from gym_master.gym.utils.renderer import Renderer
+from gym_master.gym.envs.classic_control import utils
 
 class ShipEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
     
-    def __init__(self):
+    def __init__(self, render_mode: Optional[str] = None):
         # screen
         self.screen_width = 900
         self.screen_height = 800
@@ -141,8 +141,24 @@ class ShipEnv(gym.Env):
         self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
 
+        self.render_mode = render_mode
+        self.renderer = Renderer(self.render_mode, self._render)
+
+    def get_init(self):
+        self.position_x = self.screen_width/2
+        self.position_y = self.screen_height - 30
+        self.psi = self.deg2rad(0)    # rad
+
+        self.x, self.y, self.angle = 0, 0, 0
+        self.u, self.v, self.r = 0, 0, 0 # self.r: d_deg/dt
+        self.u_dot, self.v_dot, self.r_dot = 0, 0, 0
+
+        # Rotated coordinate
+        self.X, self.Y = 0, 0
+
     def step(self, action):
 
+        
         # Thrust_port, Thrust_starboard
         T_l = 10
         T_r = 10
@@ -179,6 +195,12 @@ class ShipEnv(gym.Env):
         
         중요한점!! math.cos, math.sin은 rad을 사용!!
         
+    if done:
+        observation, info = env.reset(return_info=True)
+        print("##############True###############")
+
+    
+env.close()
         '''
         
         # Rotated coordinate
@@ -196,6 +218,7 @@ class ShipEnv(gym.Env):
         # reward
         pos_x = -self.position_x + 1000
         pos_y = self.position_y - 370
+        done = self.done
         done = bool(pos_x == self.goal_x and pos_y == self.goal_y
                     or pos_x  >= self.screen_width
                     or pos_x <= 0
@@ -211,9 +234,9 @@ class ShipEnv(gym.Env):
             if pos_x == self.goal_x and pos_y== self.goal_y:
                 reward = 1.0
             else:
-                reward = -1.0
-        
+                reward = -0.5
         self.state = (self.position_x, self.position_y, self.velocity, self.psi)
+        self.renderer.render_step()
 
         return np.array(self.state, dtype=np.float32), reward, done, {}
      
@@ -225,13 +248,26 @@ class ShipEnv(gym.Env):
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
-        self.state = np.array([self.np_random.uniform(low=650, high=660), self.np_random.uniform(low=770, high=780), 1.5, 0])
+        self.state = np.array([self.np_random.uniform(low=650, high=660), self.np_random.uniform(low=770, high=780), 0, 0])
+        # low, high = utils.maybe_parse_reset_bounds(options, 660, 660)
+        # self.state = np.array([self.np_random.uniform(low=low, high=high), self.np_random.uniform(low=low, high=high), 0, 0])
+        self.get_init()
+        self.renderer.reset()
+        self.renderer.render_step()
+        self.done = False
         if not return_info:
             return np.array(self.state, dtype=np.float32)
         else: 
             return np.array(self.state, dtype=np.float32), {}
-          
-    def render(self, mode= 'human'):
+
+    def render(self, mode = 'human'):
+        if self.render_mode is not None:
+            return self.renderer.get_renders()
+        else:
+            return self._render(mode)
+
+    def _render(self, mode= 'human'):
+        assert mode in self.metadata["render_modes"]
         
         '''
         pygame좌표계를 우주현 교수님 좌표계와 통일
@@ -245,7 +281,11 @@ class ShipEnv(gym.Env):
         # height 와 width의 위치를 바꿔준 이유 = 선박 이미지 좌표와 pygame 이미지 좌표를 맞춰주기 위해
         if self.screen is None:
             pygame.init()
-            self.screen = pygame.display.set_mode((screen_height, screen_width))
+            if mode == "human":
+                pygame.display.init()
+                self.screen = pygame.display.set_mode((screen_height, screen_width))
+            else:
+                self.screen = pygame.Surface((screen_width, screen_height))
         if self.clock is None:
             self.clock = pygame.time.Clock()
         

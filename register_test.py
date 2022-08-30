@@ -11,6 +11,7 @@ register(
 env = gym.make('ShipEnv-v0')
 # env.reset()
 observation,info = env.reset(seed=42, return_info=True)
+rewards = 0
 for _ in range(2000):
     env.render()
     done = False
@@ -18,12 +19,13 @@ for _ in range(2000):
 
     # state, reward, done, _ = env.step(env.action_space())
     observation, reward, done, info = env.step(action)
-    print("reward", reward)
-    print("step",_)
-    print("done", done)
+    rewards += reward
+    print("rewards", rewards)
     if done:
         observation, info = env.reset(return_info=True)
-        print("##############True###############")
+        rewards = 0
+        # print("##############True###############")
+    
 
     
 env.close()

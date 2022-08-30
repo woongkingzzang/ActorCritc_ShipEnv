@@ -94,8 +94,12 @@ class ShipEnv(gym.Env):
         self.max_position_x = self.screen_width
         self.min_position_y = 0
         self.max_position_y = self.screen_height
-        self.position_x = self.screen_width/2
-        self.position_y = self.screen_height - 30
+        # self.position_x = self.screen_width/2
+        # self.position_y = self.screen_height - 30
+
+        self.position_x = 100
+        self.position_y = 450
+    
         self.psi = self.deg2rad(0)    # rad
         
         # 자선의 속도
@@ -129,9 +133,12 @@ class ShipEnv(gym.Env):
         self.low = np.array([self.min_position_x, self.min_position_y, self.min_speed, self.min_angle], dtype=np.float32)
         self.high = np.array([self.max_position_x, self.max_position_y, self.max_speed, self.max_angle], dtype=np.float32)
         
-        # Goal
-        self.goal_x = self.screen_width - 100 # goal_x = 800
-        self.goal_y = self.screen_height/2 # goal_y = 400
+        # Goal(Real)
+        # self.goal_x = self.screen_width - 100 # goal_x = 800
+        # self.goal_y = self.screen_height/2 # goal_y = 400
+
+        self.goal_x = 800
+        self.goal_y = 400
         
         # Path
         self.screen = None
@@ -145,8 +152,8 @@ class ShipEnv(gym.Env):
         self.renderer = Renderer(self.render_mode, self._render)
 
     def get_init(self):
-        self.position_x = self.screen_width/2
-        self.position_y = self.screen_height - 30
+        self.position_x = 100
+        self.position_y = 400
         self.psi = self.deg2rad(0)    # rad
 
         self.x, self.y, self.angle = 0, 0, 0
@@ -166,15 +173,33 @@ class ShipEnv(gym.Env):
         # action
         if action == 0 :
             T_l = T_r
-            T_r = T_l
+            # T_l += 0.0001
             
         elif action == 1: # 우현
-            T_l += 0.0001
+            T_r += 0.0001
+            # T_r -= 0.0001
+            # T_l = 10
+            # T_r = 10
         
         elif action == 2: # 좌현
-            T_r += 0.0001
+            T_l += 0.0001
+            # T_l = T_r
+            # T_l -= 0.0001
+            # T_l = 10
+            # T_r = 10
+        
+        # elif action == 3:
+        #     T_r = T_l
+        #     # T_l = 10
+        #     # T_r = 10
+
+        # elif action == 4:
+        #     T_r = T_l
+        #     # T_l = 10
+            # T_r = 10
         
         self.action = action
+        # print(self.action)
         action_Tx = T_l +  T_r
         action_Tn = (T_l - T_r) * self.beam / 2
         
@@ -200,7 +225,7 @@ class ShipEnv(gym.Env):
         print("##############True###############")
 
     
-env.close()
+    env.close()
         '''
         
         # Rotated coordinate
@@ -213,11 +238,11 @@ env.close()
         self.position_y += self.Y
         
         # velocity
-        self.velocity = math.sqrt(math.pow(self.u, 2) + math.pow(self.v, 2))
+        # self.velocity = math.sqrt(math.pow(self.u, 2) + math.pow(self.v, 2))
     
         # reward
-        pos_x = -self.position_x + 1000
-        pos_y = self.position_y - 370
+        pos_x = self.position_x
+        pos_y = self.position_y
         done = self.done
         done = bool(pos_x == self.goal_x and pos_y == self.goal_y
                     or pos_x  >= self.screen_width
@@ -227,16 +252,28 @@ env.close()
                     )
 
         if not done:
-            reward = 0.3
+            reward = 0.0
             if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
-                reward = 0.7
+                reward = 200.0
+                print("####reward#####")
+            elif self.goal_y - 100 <= pos_y <= self.goal_y + 100:
+                reward = 1.0
+            elif self.goal_y - 50 <= pos_y <= self.goal_y + 50:
+                reward = 2.0
+
+            elif pos_x > self.goal_x:
+                reward = -50.0
+            elif pos_y > self.goal_y + 150 or pos_y < self.goal_y - 150:
+                reward = -3.0
         else:
             if pos_x == self.goal_x and pos_y== self.goal_y:
-                reward = 1.0
+                reward = 400.0
+                print("########Reward!######")
             else:
-                reward = -0.5
-        self.state = (self.position_x, self.position_y, self.velocity, self.psi)
+                reward = -400
+        self.state = (self.position_x, self.position_y, self.psi)
         self.renderer.render_step()
+
 
         return np.array(self.state, dtype=np.float32), reward, done, {}
      
@@ -248,12 +285,13 @@ env.close()
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
-        self.state = np.array([self.np_random.uniform(low=650, high=660), self.np_random.uniform(low=770, high=780), 0, 0])
+        self.get_init()
+        self.state = np.array([self.np_random.uniform(low=90, high=110), self.np_random.uniform(low=390, high=410), 0])
         # low, high = utils.maybe_parse_reset_bounds(options, 660, 660)
         # self.state = np.array([self.np_random.uniform(low=low, high=high), self.np_random.uniform(low=low, high=high), 0, 0])
-        self.get_init()
-        self.renderer.reset()
-        self.renderer.render_step()
+        # self.get_init()
+        # self.renderer.reset()
+        # self.renderer.render_step()
         self.done = False
         if not return_info:
             return np.array(self.state, dtype=np.float32)
@@ -299,9 +337,8 @@ env.close()
        
         
         # Goal 그리기 
-        visual_goal_x = 100 # visual goal = 100
-        visual_goal_y = self.goal_y
-        pygame.draw.circle(self.surf, (255,0,0), (visual_goal_y, visual_goal_x), 15)
+        visual_goal_x, visual_goal_y = self.render_cordinate(self.goal_x, self.goal_y)
+        pygame.draw.circle(self.surf, (255,0,0), (visual_goal_x, visual_goal_y), 15)
 
         # 자선 그리기
         
@@ -312,7 +349,9 @@ env.close()
         
         '''
         # print(self.state)
-        center = (self.state[1] - 370 , -self.state[0]+ 1000 )
+        visual_os_x, visual_os_y = self.render_cordinate(self.state[0], self.state[1])
+        # center = (self.state[1] - 370 , -self.state[0]+ 1000 )
+        center = (visual_os_x, visual_os_y)
         scale = 8
         self.os_img: pygame.Surface = pygame.image.load("./self_ship.png")
         
@@ -320,7 +359,7 @@ env.close()
         self.os_img: pygame.Surface = pygame.transform.scale(self.os_img, self.ship_size)
 
         # rotate
-        self.os_img = pygame.transform.rotate(self.os_img, - self.state[3] * 180 / math.pi)
+        self.os_img = pygame.transform.rotate(self.os_img, -self.state[2] * 180 / math.pi)
         
         # rotate된 이미지를 덮어씌우기
         self.rect = self.os_img.get_rect()
@@ -361,3 +400,10 @@ env.close()
     def deg2rad(self,deg):
         rad = math.pi/180 * deg
         return rad
+
+    def render_cordinate(self, real_x, real_y):
+
+        vis_x = real_y
+        vis_y = -real_x + self.screen_width
+        
+        return vis_x, vis_y

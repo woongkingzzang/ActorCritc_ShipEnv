@@ -56,7 +56,7 @@ class ActorCritic(tf.keras.Model):
         self.f2 = layers.Dense(num_hidden_units/2, activation= 'relu')
         self.f3 = layers.Dense(num_hidden_units/4, activation= 'relu')
         self.f4 = layers.Dense(num_hidden_units/8, activation= 'relu')
-        # self.f5 = layers.Dense(128, activation = "relu")
+        self.f5 = layers.Dense(num_hidden_units/16, activation = "relu")
         self.actor = layers.Dense(num_actions)
         self.critic = layers.Dense(1)
 
@@ -65,8 +65,8 @@ class ActorCritic(tf.keras.Model):
         x1 = self.f2(x)
         x2 = self.f3(x1)
         x3 = self.f4(x2)
-        # x4 = self.f5(x3)
-        return self.actor(x3), self.critic(x3)
+        x4 = self.f5(x3)
+        return self.actor(x4), self.critic(x4)
 
 
 
@@ -221,7 +221,7 @@ def train_step(
 max_episodes = 10000
 max_steps_per_episode = 1000
 
-reward_threshold = 100
+reward_threshold = 1000
 running_reward = 0
 
 gamma = 0.99

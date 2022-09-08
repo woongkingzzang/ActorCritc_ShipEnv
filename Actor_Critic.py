@@ -277,7 +277,7 @@ def render_episode(env: gym.Env, model: tf.keras.Model, max_steps: int):
     if done:
       break
 
-  return images
+  return images  
 
 # Save GIF image
 images = render_episode(env, model, max_steps_per_episode)
@@ -288,7 +288,7 @@ images[0].save(
     image_file_0, save_all=True, append_images=images[1:], loop=0, duration=1)
 
 images[len(images)-1].save(
-    image_file_1, save_all=True, append_images=images[1:], loop=0, duration=1)
-
+    image_file_1, save_all=True, append_images=images[1:], loop=0, duration=1
+    
 # import tensorflow_docs.vis.embed as embed
 # embed.embed_file(image_file)

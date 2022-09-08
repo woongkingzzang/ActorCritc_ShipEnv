@@ -1,12 +1,10 @@
 '''
     ShipEnv-ActorCritic
-
     ** 단계별 개발 **
      step 1. Goal만 있는 환경 => 진행중
      step 2. Goal + Static Obstacle
      step 3. Goal + Static + Dynamic Obstacle
     
-
     ** 환경 설계 from 우주현 교수님 논문 **
     
         1. observation 
@@ -176,8 +174,8 @@ class ShipEnv(gym.Env):
 
         ## TS ##
         self.ts_pos_x = 650
-        self.ts_pos_y = 700
-        self.ts_psi = self.deg2rad(270)
+        self.ts_pos_y = 400
+        self.ts_psi = self.deg2rad(180)
 
         self.ts_x, self.tx_y, self.ts_angle = 0, 0, 0
         self.ts_u, self.ts_v, self.ts_r = 0, 0, 0
@@ -288,8 +286,6 @@ class ShipEnv(gym.Env):
                         )
         ## reward ##
         if not done:
-            print(pos_y)
-            print(psi)
             reward = 0.0
             if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
                 reward = 200.0
@@ -423,7 +419,7 @@ class ShipEnv(gym.Env):
         self.ship_size = [i//scale for i in self.os_img.get_size()]
         self.ts_size = [i//scale_ts for i in self.os_img.get_size()]
         self.os_img: pygame.Surface = pygame.transform.scale(self.os_img, self.ship_size)
-        self.ts_img: pygame.Surface = pygame.transform.scale(self.ts_img, (263/scale_ts, 93/scale_ts))
+        self.ts_img: pygame.Surface = pygame.transform.scale(self.ts_img, self.ts_size)#(263/scale_ts, 93/scale_ts))
 
         # rotate
         self.os_img = pygame.transform.rotate(self.os_img, -self.state[2] * 180 / math.pi)
@@ -484,4 +480,3 @@ class ShipEnv(gym.Env):
     def distance(self, x1, y1, x2, y2):
         result = math.sqrt(x2**2 - x1**2, y2**2 - y1**2)
         return result
-    

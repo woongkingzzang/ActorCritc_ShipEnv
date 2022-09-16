@@ -296,15 +296,19 @@ class ShipEnv(gym.Env):
                     reward = 1.0
 
             elif self.goal_y - 50 <= pos_y <= self.goal_y + 50:
-                if 270<psi<360 or 0<psi<90:
+                if 340<psi<360 or 0<psi<20:
                  reward = 2.0
 
             # elif pos_y > self.goal_y + 150 or pos_y < self.goal_y - 150:
             #     reward = -3.0
            
-            elif pos_y > self.ts_pos_y + 30:
-                if 0< psi < 90:
-                    reward = 20
+            elif pos_y > self.ts_pos_y + 30 and pos_x == self.ts_pos_x:
+                if 0 < psi < 90:
+                    reward = 20.0
+            
+            elif self.ts_pos_y > pos_y:
+                if 90 <= psi <= 270:
+                    reward = -10
                     
             # if pos_y > 400:
             #     if 270 < psi < 360:
@@ -326,9 +330,9 @@ class ShipEnv(gym.Env):
                 reward = 600.0
                 print("########Reward!######")
             elif self.ts_pos_x -30 < pos_x < self.ts_pos_x + 30 and self.ts_pos_y -30 < pos_y < self.ts_pos_y + 30:
-                reward = -600.0
+                reward = -200.0
             else:
-                reward = -400
+                reward = -400.0
 
         self.state = (self.position_x, self.position_y, self.psi, self.ts_pos_x, self.ts_pos_y, self.ts_psi)
         self.renderer.render_step()

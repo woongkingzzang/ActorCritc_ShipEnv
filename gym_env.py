@@ -153,7 +153,7 @@ class ShipEnv(gym.Env):
         self.clock  = None
         self.isopen = True
     
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(8)
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
 
         self.render_mode = render_mode
@@ -191,19 +191,32 @@ class ShipEnv(gym.Env):
         
         # action
         if action == 0 :
-            T_l = T_r
+            T_l == T_r
             # T_l += 0.0001
             
         elif action == 1: # 우현
-            T_r += 0.1
+            T_r += 0.2
             
-        
         elif action == 2: # 좌현
-            T_l += 0.1
+            T_l += 0.2
             
-        
         elif action == 3:
-            T_l, T_r = 7, 7
+            T_l -= 0.2
+        
+        elif action == 4:
+            T_r -= 0.2
+                    
+        elif action == 5:
+            T_r == T_l
+        
+        elif action == 6:
+            T_r == T_l 
+        
+        elif action == 7:
+            T_r == T_l 
+        
+        # print("T_r", T_r)
+        # print("T_l", T_l)
 
         self.action = action
         # print(self.action)
@@ -272,10 +285,13 @@ class ShipEnv(gym.Env):
         done = self.done
 
         ## done ##
-        if pos_x == self.goal_x and pos_y == self.goal_y:
+        if pos_x < 100:
+            if 90 <= psi <= 270:
+                done =True
+        elif pos_x == self.goal_x and pos_y == self.goal_y:
             done = True
-        elif self.ts_pos_x - 30 < pos_x < self.ts_pos_x +30\
-             and self.ts_pos_y - 30 < pos_y < self.ts_pos_y + 30:
+        elif self.ts_pos_x - 40 < pos_x < self.ts_pos_x + 40\
+             and self.ts_pos_y - 40 < pos_y < self.ts_pos_y + 40:
             done = True
         else:
             done = bool(pos_x  >= self.screen_width
@@ -283,13 +299,34 @@ class ShipEnv(gym.Env):
                         or pos_y  >= self.screen_height
                         or pos_y <= 0
                         or pos_x == self.ts_pos_x and pos_y == self.ts_pos_y
+                        or self.ts_pos_x <=0
                         )
         ## reward ##
         if not done:
             reward = 0.0
-            if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
-                reward = 200.0
-                print("####reward#####")
+            if pos_x == 200:
+                if 90 < psi < 270:
+                    reward = -150.0
+                else:
+                    reward = 100.0
+            
+            elif pos_x == 400:
+                if 90 < psi < 270:
+                    reward = -200.0
+                else:
+                    reward = 200.0
+            
+            elif pos_x == 600:
+                if 90 < psi < 270:
+                    reward = -200.0
+                else:
+                    reward = 400.0
+            
+            elif 0 < pos_x < 100 and 90 < psi < 270 :
+                reward = -100.0
+                
+            elif pos_y > 600 or pos_y < 200:
+                reward = -50
 
             elif self.goal_y - 100 <= pos_y <= self.goal_y + 100:
                 if 270<psi<360 or 0<psi<90:
@@ -297,40 +334,34 @@ class ShipEnv(gym.Env):
 
             elif self.goal_y - 50 <= pos_y <= self.goal_y + 50:
                 if 340<psi<360 or 0<psi<20:
-                 reward = 2.0
+                    reward = 2.0
 
             # elif pos_y > self.goal_y + 150 or pos_y < self.goal_y - 150:
             #     reward = -3.0
            
-            elif pos_y > self.ts_pos_y + 30 and pos_x == self.ts_pos_x:
-                if 0 < psi < 90:
-                    reward = 20.0
-            
+            elif pos_y > self.ts_pos_y + 50 and pos_x == self.ts_pos_x:
+                if 0 < psi < 45:
+                    reward = 500.0
+                    
+
             elif self.ts_pos_y > pos_y:
                 if 90 <= psi <= 270:
-                    reward = -10
+                    reward = -10.0
                     
-            # if pos_y > 400:
-            #     if 270 < psi < 360:
-            #         reward = 10
-            #     else:
-            #         reward = -10
-            # elif pos_y < 400:
-            #     if 0 < psi < 90:
-            #         reward = 10
-            #     else:
-            #         reward = -10
-            # else:
-            #     if psi == 0:
-            #         reward = 10
+            elif 200 <= pos_y <= 600:
+                reward = 10.0
+            
+            elif self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
+                reward = 800.0
+                print("####reward#####")              
             
 
-        else:
+        else:  
             if pos_x == self.goal_x and pos_y== self.goal_y:
-                reward = 600.0
+                reward = 1000.0
                 print("########Reward!######")
             elif self.ts_pos_x -30 < pos_x < self.ts_pos_x + 30 and self.ts_pos_y -30 < pos_y < self.ts_pos_y + 30:
-                reward = -200.0
+                reward = -400.0
             else:
                 reward = -400.0
 

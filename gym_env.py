@@ -59,6 +59,7 @@
 '''
 
 import math
+from math import atan2
 # from this import d
 
 # from turtle import position
@@ -155,11 +156,13 @@ class ShipEnv(gym.Env):
         self.clock  = None
         self.isopen = True
     
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(5)
         self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
 
         self.render_mode = render_mode
         self.renderer = Renderer(self.render_mode, self._render)
+
+        ## simulation save ## 
 
     def get_init(self):
         ## OS ##
@@ -205,7 +208,10 @@ class ShipEnv(gym.Env):
             
         
         elif action == 3:
-            T_l, T_r = 7, 7
+            T_l -= 0.1
+        
+        elif action == 4:
+            T_r -= 0.1
 
         self.action = action
         # print(self.action)
@@ -288,43 +294,38 @@ class ShipEnv(gym.Env):
                         )
         ## reward ##
         if not done:
-            print(pos_y)
-            print(psi)
             reward = 0.0
+            print(pos_y)
+            opt_rad= atan2(pos_x - self.goal_x, pos_y - self.goal_y) 
+            opt_deg = self.rad2deg(opt_rad) + 90
+            print(psi)
+            if opt_deg <0:
+                opt_deg += 360
+            print(opt_deg)
             if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
                 reward = 200.0
                 print("####reward#####")
-
-            elif self.goal_y - 100 <= pos_y <= self.goal_y + 100:
-                if 270<psi<360 or 0<psi<90:
-                    reward = 1.0
-
-            elif self.goal_y - 50 <= pos_y <= self.goal_y + 50:
-                if 270<psi<360 or 0<psi<90:
-                 reward = 2.0
-
-            # elif pos_y > self.goal_y + 150 or pos_y < self.goal_y - 150:
-            #     reward = -3.0
-           
-            elif pos_y > self.ts_pos_y + 30:
-                if 0< psi < 90:
-                    reward = 20
-                    
-            # if pos_y > 400:
-            #     if 270 < psi < 360:
-            #         reward = 10
-            #     else:
-            #         reward = -10
-            # elif pos_y < 400:
-            #     if 0 < psi < 90:
-            #         reward = 10
-            #     else:
-            #         reward = -10
-            # else:
-            #     if psi == 0:
-            #         reward = 10
             
-
+            if pos_y < self.ts_pos_y:
+                dist = self.distance(pos_x, pos_y, self.ts_pos_x, self.ts_pos_y)
+                print("dist:", dist)
+                if dist < 400:
+                    if pos_x <= self.ts_pos_x:
+                        if 0<= psi <= 90:
+                            reward = 10
+                        else:
+                            reward = -10
+                    else:
+                        if opt_deg - 20 < psi < opt_deg +20:
+                            reward = 10
+                        else:
+                            reward = -10
+                else:
+                    if opt_deg - 20 < psi < opt_deg +20:
+                        reward = 10
+                    else:
+                        reward = -10
+                    
         else:
             if pos_x == self.goal_x and pos_y== self.goal_y:
                 reward = 600.0
@@ -482,6 +483,6 @@ class ShipEnv(gym.Env):
         return vis_x, vis_y
 
     def distance(self, x1, y1, x2, y2):
-        result = math.sqrt(x2**2 - x1**2, y2**2 - y1**2)
+        result = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
         return result
     

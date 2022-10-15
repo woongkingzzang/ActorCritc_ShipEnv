@@ -37,7 +37,7 @@ register(
 env = gym.make("ShipEnv-v0")
 
 seed = 42
-env.seed(seed)
+env.action_space.seed(seed)
 tf.random.set_seed(seed)
 np.random.seed(seed)
 
@@ -72,7 +72,7 @@ class ActorCritic(tf.keras.Model):
 
 num_actions = env.action_space.n # env.action_space.n
 # num_actions = 3
-num_hidden_units = 1024
+num_hidden_units = 64
 model = ActorCritic(num_actions, num_hidden_units)
 
 

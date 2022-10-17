@@ -162,7 +162,11 @@ class ShipEnv(gym.Env):
         self.render_mode = render_mode
         self.renderer = Renderer(self.render_mode, self._render)
 
-        ## simulation save ## 
+        # simulation save
+        self.action_list = []
+        self.simul_test = False
+        self.deg = 0
+        self.rd = 0
 
     def get_init(self):
         ## OS ##
@@ -187,33 +191,71 @@ class ShipEnv(gym.Env):
         self.ts_u_dot, self.ts_v_dot, self.ts_r_dot = 0, 0, 0
 
         self.ts_X, self.ts_Y = 0,0 
+        self.simul_test = False
 
     def step(self, action):
         # print(action)
         # Thrust_port, Thrust_starboard
         T_l = 10
         T_r = 10
-        
+        self.action_list.append(action)
+        # ang = 0
         # action
+        # if action == 0 :
+        #     T_l = T_r
+        #     # self.angle = self.rad2
+            
+        # elif action == 1: # 우현
+        #     T_r += 0.1
+            
+        
+        # elif action == 2: # 좌현
+        #     T_l += 0.1
+            
+        
+        # elif action == 3:
+        #     T_l -= 0.1
+
+        # elif action == 4:
+        #     T_r -= 0.1
+        
+        # elif action == 5:
+        #     T_l += 0.5
+        
+        # elif action == 6:
+        #     T_r += 0.5
+
+        # elif action == 7:
+        #     T_l -= 0.5
+        
+        # elif action == 8:
+        #     T_r -= 0.5
+
         if action == 0 :
-            T_l = T_r
-            # T_l += 0.0001
+            T_l = 10
+            T_r = 10
+            # self.angle = self.rad2
             
         elif action == 1: # 우현
-            T_r += 0.1
+            T_l = 9.5
+            T_r = 10
             
         
         elif action == 2: # 좌현
-            T_l += 0.1
-            
+            T_l =10
+            T_r =9.5
         
         elif action == 3:
-            T_l -= 0.1
-        
+            T_l = 6
+            T_r = 11
+            
+
         elif action == 4:
-            T_r -= 0.1
+            T_l = 11
+            T_r = 6
 
         self.action = action
+        # print(self.action_list)
         # print(self.action)
         action_Tx = T_l +  T_r
         action_Tn = (T_l - T_r) * self.beam / 2
@@ -228,6 +270,7 @@ class ShipEnv(gym.Env):
         self.u += self.u_dot * self.dt
 
         self.angle += self.r * self.dt  # deg
+        # self.angle = ang
         # print(self.angle)
         self.y += self.v * self.dt
         self.x += self.u * self.dt
@@ -239,7 +282,8 @@ class ShipEnv(gym.Env):
         # Rotated coordinate
         
         # self.psi += self.angle * 180 / math.pi # deg to rad
-        self.psi += self.angle
+        self.psi = self.angle
+        print(self.rad2deg(self.psi)%360)
         # self.psi += self.angle * math.pi/180
         self.X = self.x * math.cos(self.psi) - self.y * math.sin(self.psi) 
         self.Y = self.x * math.sin(self.psi) + self.y * math.cos(self.psi)
@@ -279,6 +323,7 @@ class ShipEnv(gym.Env):
         psi = self.rad2deg(self.psi) % 360
         done = self.done
 
+
         ## done ##
         if pos_x == self.goal_x and pos_y == self.goal_y:
             done = True
@@ -295,47 +340,59 @@ class ShipEnv(gym.Env):
         ## reward ##
         if not done:
             reward = 0.0
-            print(pos_y)
+            dist = self.distance(pos_x, pos_y, self.ts_pos_x, self.ts_pos_y)
+
+            self.deg = psi
+            self.rd = dist
+            
+           
             opt_rad= atan2(pos_x - self.goal_x, pos_y - self.goal_y) 
             opt_deg = self.rad2deg(opt_rad) + 90
-            print(psi)
             if opt_deg <0:
                 opt_deg += 360
-            print(opt_deg)
+            
             if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
-                reward = 200.0
+                reward = 400.0
+                self.simul_test = True
                 print("####reward#####")
             
             if pos_y < self.ts_pos_y:
-                dist = self.distance(pos_x, pos_y, self.ts_pos_x, self.ts_pos_y)
-                print("dist:", dist)
                 if dist < 400:
                     if pos_x <= self.ts_pos_x:
-                        if 0<= psi <= 90:
-                            reward = 10
+                        if 0< psi < 90:
+                            reward = 1
                         else:
-                            reward = -10
+                            reward = -1
                     else:
                         if opt_deg - 20 < psi < opt_deg +20:
-                            reward = 10
+                            reward = 1
                         else:
-                            reward = -10
+                            reward = 0
                 else:
                     if opt_deg - 20 < psi < opt_deg +20:
                         reward = 10
                     else:
-                        reward = -10
+                        reward = -1
+            else:
+                if opt_deg - 20 < psi < opt_deg +20:
+                    reward = 1
+                else:
+                    reward = -1
+
+            if self.ts_pos_x -40 < pos_x < self.ts_pos_x + 40 and self.ts_pos_y -40 < pos_y < self.ts_pos_y + 34:
+                reward = -100.0
                     
         else:
             if pos_x == self.goal_x and pos_y== self.goal_y:
-                reward = 600.0
+                reward = 60.0
                 print("########Reward!######")
             elif self.ts_pos_x -30 < pos_x < self.ts_pos_x + 30 and self.ts_pos_y -30 < pos_y < self.ts_pos_y + 30:
                 reward = -600.0
             else:
-                reward = -400
+                reward = -40
 
-        self.state = (self.position_x, self.position_y, self.psi, self.ts_pos_x, self.ts_pos_y, self.ts_psi)
+        self.state = (self.position_x, self.position_y, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd)
+        # self.state = (self.deg, self.rd)
         self.renderer.render_step()
         
         return np.array(self.state, dtype=np.float32), reward, done, {}
@@ -350,6 +407,8 @@ class ShipEnv(gym.Env):
         super().reset(seed=seed)
         self.get_init()
         self.state = np.array([self.np_random.uniform(low=90, high=110), self.np_random.uniform(low=390, high=410), 0, 650, 700, -90])
+        self.action_list= []
+        self.simul_test = False
         # low, high = utils.maybe_parse_reset_bounds(options, 660, 660)
         # self.state = np.array([self.np_random.uniform(low=low, high=high), self.np_random.uniform(low=low, high=high), 0, 0])
         # self.get_init()
@@ -411,8 +470,10 @@ class ShipEnv(gym.Env):
         '''
 
         # print(self.state)
-        visual_os_x, visual_os_y = self.render_cordinate(self.state[0], self.state[1])
-        visual_ts_x, visual_ts_y = self.render_cordinate(self.state[3], self.state[4])
+        # visual_os_x, visual_os_y = self.render_cordinate(self.state[0], self.state[1])
+        # visual_ts_x, visual_ts_y = self.render_cordinate(self.state[3], self.state[4])
+        visual_os_x, visual_os_y = self.render_cordinate(self.position_x, self.position_y)
+        visual_ts_x, visual_ts_y = self.render_cordinate(self.ts_pos_x, self.ts_pos_y)
         # center = (self.state[1] - 370 , -self.state[0]+ 1000 )
         center = (visual_os_x, visual_os_y)
         center_ts = (visual_ts_x, visual_ts_y)
@@ -427,7 +488,8 @@ class ShipEnv(gym.Env):
         self.ts_img: pygame.Surface = pygame.transform.scale(self.ts_img, (263/scale_ts, 93/scale_ts))
 
         # rotate
-        self.os_img = pygame.transform.rotate(self.os_img, -self.state[2] * 180 / math.pi)
+        # self.os_img = pygame.transform.rotate(self.os_img, -self.state[2] * 180 / math.pi)
+        self.os_img = pygame.transform.rotate(self.os_img, -self.psi * 180 / math.pi)
         # self.ts_img = pygame.transform.rotate(self.os_img, -self.state[5] * 180 / math.pi)
         # print(-self.state[5] * 180 / math.pi)   
         #      

@@ -182,7 +182,7 @@ class ShipEnv(gym.Env):
         self.X, self.Y = 0, 0
 
         ## TS ##
-        self.ts_pos_x = 650
+        self.ts_pos_x = 500
         self.ts_pos_y = 700
         self.ts_psi = self.deg2rad(270)
 
@@ -199,37 +199,6 @@ class ShipEnv(gym.Env):
         T_l = 10
         T_r = 10
         self.action_list.append(action)
-        # ang = 0
-        # action
-        # if action == 0 :
-        #     T_l = T_r
-        #     # self.angle = self.rad2
-            
-        # elif action == 1: # 우현
-        #     T_r += 0.1
-            
-        
-        # elif action == 2: # 좌현
-        #     T_l += 0.1
-            
-        
-        # elif action == 3:
-        #     T_l -= 0.1
-
-        # elif action == 4:
-        #     T_r -= 0.1
-        
-        # elif action == 5:
-        #     T_l += 0.5
-        
-        # elif action == 6:
-        #     T_r += 0.5
-
-        # elif action == 7:
-        #     T_l -= 0.5
-        
-        # elif action == 8:
-        #     T_r -= 0.5
 
         if action == 0 :
             T_l = 10
@@ -237,22 +206,22 @@ class ShipEnv(gym.Env):
             # self.angle = self.rad2
             
         elif action == 1: # 우현
-            T_l = 9.5
+            T_l = 9
             T_r = 10
             
         
         elif action == 2: # 좌현
             T_l =10
-            T_r =9.5
+            T_r =9
         
         elif action == 3:
-            T_l = 6
-            T_r = 11
+            T_l = 0
+            T_r = 10
             
 
         elif action == 4:
-            T_l = 11
-            T_r = 6
+            T_l = 10
+            T_r = 0
 
         self.action = action
         # print(self.action_list)
@@ -283,7 +252,7 @@ class ShipEnv(gym.Env):
         
         # self.psi += self.angle * 180 / math.pi # deg to rad
         self.psi = self.angle
-        print(self.rad2deg(self.psi)%360)
+        # print(self.rad2deg(self.psi)%360)
         # self.psi += self.angle * math.pi/180
         self.X = self.x * math.cos(self.psi) - self.y * math.sin(self.psi) 
         self.Y = self.x * math.sin(self.psi) + self.y * math.cos(self.psi)
@@ -294,7 +263,7 @@ class ShipEnv(gym.Env):
         
         ## TS ##
         
-        ts_T_r , ts_T_l = 5,5
+        ts_T_r , ts_T_l = 7,7
         ts_Tx = ts_T_r + ts_T_l
         ts_Tn = (ts_T_l - ts_T_r) * self.beam / 2
 
@@ -352,7 +321,7 @@ class ShipEnv(gym.Env):
                 opt_deg += 360
             
             if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
-                reward = 400.0
+                reward = 40
                 self.simul_test = True
                 print("####reward#####")
             
@@ -367,7 +336,7 @@ class ShipEnv(gym.Env):
                         if opt_deg - 20 < psi < opt_deg +20:
                             reward = 1
                         else:
-                            reward = 0
+                            reward = -1
                 else:
                     if opt_deg - 20 < psi < opt_deg +20:
                         reward = 10
@@ -391,7 +360,7 @@ class ShipEnv(gym.Env):
             else:
                 reward = -40
 
-        self.state = (self.position_x, self.position_y, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd)
+        self.state = (T_l, T_r, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd)
         # self.state = (self.deg, self.rd)
         self.renderer.render_step()
         

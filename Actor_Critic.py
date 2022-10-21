@@ -28,6 +28,7 @@ from typing import Any, List, Sequence, Tuple
 
 from gym.envs.registration import register
 from gym_env import ShipEnv
+from matplotlib import pyplot
 
 register(
     id='ShipEnv-v0',
@@ -218,14 +219,18 @@ def train_step(
     return episode_reward
 
 
-max_episodes = 200
-max_steps_per_episode = 500
+max_episodes = 1000
+max_steps_per_episode = 1000
 
 reward_threshold = 3000
 running_reward = 0
 
 gamma = 0.99
 best_reward = 0
+
+x1 = list(range(max_episodes))
+y1 = []
+y2 = []
 with tqdm.trange(max_episodes) as t:
   for i in t:
 
@@ -238,24 +243,50 @@ with tqdm.trange(max_episodes) as t:
     t.set_description(f'Episode {i}')
     t.set_postfix(
         episode_reward=episode_reward, running_reward=running_reward)
-
+    # x1 = [0, max_episodes]
+    # y1 = []
+    y1.append(running_reward)
+    y2.append(episode_reward)
     if episode_reward > best_reward:
         best_reward = episode_reward
-        print(env.action_list)
+        best_list = env.action_list
+        print(best_list)
 
     if episode_reward > 3000:
         print("#####good#####")
         print(env.action_list)
-    if env.simul_test:
-        print("####Reward#####")
-        print(env.action_list)
+    # if env.simul_test:
+    #     print("####Reward#####")
+    #     print(env.action_list)
     if i % 10 == 0:
         # print(env.action_list)
         pass # print(f'Episode {i}: average reward: {avg_reward}')
   
     if running_reward > reward_threshold:  
+        print("####last####")
         print(env.action_list)
+        print("####best####")
+        print(best_list)
         break
+
+print("####last####")
+print(env.action_list)
+print("####best####")
+print(best_list)
+        
+# Reward Visualization
+pyplot.subplot(1,2,1)
+pyplot.plot(x1, y1)
+pyplot.xlabel('Episodes')
+pyplot.ylabel('Running Reward')
+pyplot.title('Running Reward')
+
+pyplot.subplot(1,2,2)
+pyplot.plot(x1,y2)
+pyplot.xlabel('Episodes')
+pyplot.ylabel('Episode Reward')
+pyplot.title('Episode Reward')
+pyplot.show()
     
 print(f'\nSolved at episode {i}: average reward: {running_reward:.2f}!')
 

@@ -30,6 +30,8 @@ from gym.envs.registration import register
 from gym_env import ShipEnv
 from matplotlib import pyplot
 
+from tensorflow.python.client import device_lib
+
 register(
     id='ShipEnv-v0',
     entry_point='gym_env:ShipEnv',
@@ -54,9 +56,9 @@ class ActorCritic(tf.keras.Model):
         
         super().__init__()
         self.f1 = layers.Dense(num_hidden_units, activation= 'relu')
-        self.f2 = layers.Dense(num_hidden_units/2, activation= 'relu')
+        self.f2 = layers.Dense(num_hidden_units/4, activation= 'relu')
         self.f3 = layers.Dense(num_hidden_units/16, activation= 'relu')
-        # self.f4 = layers.Dense(num_hidden_units/8, activation= 'relu')
+        # self.f4 = layers.Dense(num_hidden_units/32, activation= 'relu')
         # self.f5 = layers.Dense(num_hidden_units/16, activation = "relu")
         self.actor = layers.Dense(num_actions)
         self.critic = layers.Dense(1)
@@ -68,7 +70,7 @@ class ActorCritic(tf.keras.Model):
         # x3 = self.f4(x2)
         # x4 = self.f5(x3)
         return self.actor(x2), self.critic(x2)
-
+                                  
 
 
 num_actions = env.action_space.n # env.action_space.n
@@ -194,9 +196,10 @@ def train_step(
  
 
     with tf.GradientTape() as tape:
+        device_lib.list_local_devices()
         
         print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
-
+        print("Num GPUs Available: ", device_lib.list_local_devices())
         action_probs, values, rewards = run_episode(
             initial_state, model, max_steps_per_episode) 
 
@@ -219,10 +222,10 @@ def train_step(
     return episode_reward
 
 
-max_episodes = 1000
+max_episodes = 100000
 max_steps_per_episode = 1000
 
-reward_threshold = 3000
+reward_threshold = 300
 running_reward = 0
 
 gamma = 0.99

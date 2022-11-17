@@ -121,7 +121,7 @@ class ShipEnv(gym.Env):
         ### Target Ship
         self.ts_pos_x = 650
         self.ts_pos_y = 700
-        self.ts_psi = self.deg2rad(245)
+        self.ts_psi = self.deg2rad(270)
         
         '''
         이렇게 변수는 보기 좋게 모아두고 정의할 필요가 있음
@@ -183,9 +183,9 @@ class ShipEnv(gym.Env):
         self.X, self.Y = 0, 0
 
         ## TS ##
-        self.ts_pos_x = 600
+        self.ts_pos_x = 500
         self.ts_pos_y = 700
-        self.ts_psi = self.deg2rad(245)
+        self.ts_psi = self.deg2rad(270)
 
         self.ts_x, self.tx_y, self.ts_angle = 0, 0, 0
         self.ts_u, self.ts_v, self.ts_r = 0, 0, 0
@@ -491,7 +491,7 @@ class ShipEnv(gym.Env):
         # rotate
         # self.os_img = pygame.transform.rotate(self.os_img, -self.state[2] * 180 / math.pi)
         self.os_img = pygame.transform.rotate(self.os_img, -self.psi * 180 / math.pi)
-        self.ts_img = pygame.transform.rotate(self.ts_img, (-self.ts_psi + 30) * 180 / math.pi)
+        # self.ts_img = pygame.transform.rotate(self.os_img, -self.state[5] * 180 / math.pi)
         # print(-self.state[5] * 180 / math.pi)   
         #      
         # rotate된 이미지를 덮어씌우기

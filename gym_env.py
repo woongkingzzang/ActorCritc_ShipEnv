@@ -39,23 +39,6 @@
         r_dot = 8.2861 * v - 0.9860 * r + 0.0307 * T_n
         
         차후 원하는 실험 선박에 맞춰 바꿔야함 
-    
-    ** 현재 단계 **
-        - step 1
-        - Dynamics : WAM-V 16
-        - state = [x, y, velocity, angle(rad)]
-    
-    ** 해결된 문제 **
-        - 선박의 운동 모델 반영
-        - 선체 고정 좌표계 + 회전 좌표계 -> 지구 고정 좌표계
-        - math.sin, cos에서 deg가 아닌 rad를 사용
-    
-    
-    ** 해결할 문제 **  
-        - rotate_matrix를 만들어서 아래 한줄 한줄 적은 코드들을 깔끔하게 고칠 수 있t음
-        - action에 따른 Tx, Tn 값 정하기
-        - 동훈이형이 KASS 운동 모델 , COLREGs 반영 (최소 2~3단계)
-    
 '''
 
 import math

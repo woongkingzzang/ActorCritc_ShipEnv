@@ -1,8 +1,7 @@
 import tensorflow as tf
-import keras
-from keras import layers
+from tensorflow import keras
+a = tf.tensor.stack
+for _ in range(1000):
+    action = tf.random.categorical([[0.3, 0.2, 0.1]], 1)[0,0]
+    print(action)
 
-action = tf.random.categorical([[0.3, 0.3, 0.3]], 1)
-print(action)
-print(tf.__version__)
-print(tf.keras)

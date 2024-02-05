@@ -39,23 +39,6 @@
         r_dot = 8.2861 * v - 0.9860 * r + 0.0307 * T_n
         
         차후 원하는 실험 선박에 맞춰 바꿔야함 
-    
-    ** 현재 단계 **
-        - step 1
-        - Dynamics : WAM-V 16
-        - state = [x, y, velocity, angle(rad)]
-    
-    ** 해결된 문제 **
-        - 선박의 운동 모델 반영
-        - 선체 고정 좌표계 + 회전 좌표계 -> 지구 고정 좌표계
-        - math.sin, cos에서 deg가 아닌 rad를 사용
-    
-    
-    ** 해결할 문제 **  
-        - rotate_matrix를 만들어서 아래 한줄 한줄 적은 코드들을 깔끔하게 고칠 수 있t음
-        - action에 따른 Tx, Tn 값 정하기
-        - 동훈이형이 KASS 운동 모델 , COLREGs 반영 (최소 2~3단계)
-    
 '''
 
 import math
@@ -119,9 +102,9 @@ class ShipEnv(gym.Env):
         self.beam = 2.5
 
         ### Target Ship
-        self.ts_pos_x = 310
-        self.ts_pos_y = 650
-        self.ts_psi = self.deg2rad(320)
+        self.ts_pos_x = 650
+        self.ts_pos_y = 700
+        self.ts_psi = self.deg2rad(245)
         
         '''
         이렇게 변수는 보기 좋게 모아두고 정의할 필요가 있음
@@ -183,9 +166,9 @@ class ShipEnv(gym.Env):
         self.X, self.Y = 0, 0
 
         ## TS ##
-        self.ts_pos_x = 200
+        self.ts_pos_x = 600
         self.ts_pos_y = 700
-        self.ts_psi = self.deg2rad(300)
+        self.ts_psi = self.deg2rad(245)
 
         self.ts_x, self.tx_y, self.ts_angle = 0, 0, 0
         self.ts_u, self.ts_v, self.ts_r = 0, 0, 0
@@ -223,10 +206,6 @@ class ShipEnv(gym.Env):
         elif action == 4:
             T_l = 10
             T_r = 0
-
-        elif action == 5:
-            T_l = 7
-            T_r = 7
 
         self.action = action
         # print(self.action_list)
@@ -269,7 +248,7 @@ class ShipEnv(gym.Env):
         
         ## TS ##
         
-        ts_T_r , ts_T_l = 10,10
+        ts_T_r , ts_T_l = 7,7
         ts_Tx = ts_T_r + ts_T_l
         ts_Tn = (ts_T_l - ts_T_r) * self.beam / 2
 
@@ -326,7 +305,6 @@ class ShipEnv(gym.Env):
         if not done:
             reward = 0.0
             dist = self.distance(pos_x, pos_y, self.ts_pos_x, self.ts_pos_y)
-            
 
             self.deg = psi
             self.rd = dist
@@ -339,64 +317,63 @@ class ShipEnv(gym.Env):
                 opt_deg += 360
             # print(opt_deg, psi)
             if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
-                reward = 1
+                reward = 50
                 self.simul_test = True
                 print("####reward#####")
             
-            ## TS 
-            if pos_y <= self.ts_pos_y:
+            if pos_y < self.ts_pos_y:
                 # if cri_idx < 0.66:
-                if dist < 300:
-                    if pos_x < self.ts_pos_x:
-                        if 0 < psi < 60:
+                if dist < 400:
+                    if pos_x <= self.ts_pos_x:
+                        if 0< psi < 60:
                             reward = 1
                         else:
-                            reward = 0
+                            reward = -1
                     else:
                         if opt_deg + 20 > 360:
                             if psi > opt_deg -20 or psi < opt_deg + 20 -360:
                                 reward = 1
                             else:
-                                reward = 0
+                                reward = -1
                         else:
                             if opt_deg - 20 < psi < opt_deg +20:
                                 reward = 1
                             else:
-                                reward = 0
+                                reward = -1
                 else:
                     if opt_deg + 20 > 360:
                         if psi > opt_deg -20 or psi < opt_deg + 20 -360:
                             reward = 1
                         else:
-                            reward = 0
+                            reward = -1
                     else:
                         if opt_deg - 20 < psi < opt_deg +20:
                             reward = 1
                         else:
-                            reward = 0
+                            reward = -1
             else:
                 if opt_deg + 20 > 360:
                     if psi > opt_deg -20 or psi < opt_deg + 20 -360:
                         reward = 1
                     else:
-                        reward = 0
+                        reward = -1
                 else:
                     if opt_deg - 20 < psi < opt_deg +20:
                         reward = 1
                     else:
-                        reward = 0
+                        reward = -1
 
-            if self.ts_pos_x -50 < pos_x < self.ts_pos_x + 50 and self.ts_pos_y -50 < pos_y < self.ts_pos_y + 50:
-                reward = 0
+            if self.ts_pos_x -40 < pos_x < self.ts_pos_x + 40 and self.ts_pos_y -40 < pos_y < self.ts_pos_y + 34:
+                reward = -100.0
                     
         else:
             if pos_x == self.goal_x and pos_y== self.goal_y:
-                reward = 1
+                reward = 60.0
                 print("########Reward!######")
             elif self.ts_pos_x -30 < pos_x < self.ts_pos_x + 30 and self.ts_pos_y -30 < pos_y < self.ts_pos_y + 30:
-                reward = 0
+                reward = -600.0
             else:
-                reward = 0
+                reward = -40
 
         self.state = (T_l, T_r, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd)
         # self.state = (self.deg, self.rd)
@@ -487,17 +464,17 @@ class ShipEnv(gym.Env):
         scale = 8
         scale_ts = 7
         self.os_img: pygame.Surface = pygame.image.load("./self_ship.png")
-        self.ts_img: pygame.Surface = pygame.image.load("./self_ts copy.png")
+        self.ts_img: pygame.Surface = pygame.image.load("./self_ts.png")
 
         self.ship_size = [i//scale for i in self.os_img.get_size()]
-        self.ts_size = [i//scale_ts for i in self.ts_img.get_size()]
+        self.ts_size = [i//scale_ts for i in self.os_img.get_size()]
         self.os_img: pygame.Surface = pygame.transform.scale(self.os_img, self.ship_size)
-        self.ts_img: pygame.Surface = pygame.transform.scale(self.ts_img, self.ts_size)
+        self.ts_img: pygame.Surface = pygame.transform.scale(self.ts_img, (263/scale_ts, 93/scale_ts))
 
         # rotate
         # self.os_img = pygame.transform.rotate(self.os_img, -self.state[2] * 180 / math.pi)
         self.os_img = pygame.transform.rotate(self.os_img, -self.psi * 180 / math.pi)
-        self.ts_img = pygame.transform.rotate(self.ts_img, -self.ts_psi * 180 / math.pi)
+        self.ts_img = pygame.transform.rotate(self.ts_img, (-self.ts_psi + 30) * 180 / math.pi)
         # print(-self.state[5] * 180 / math.pi)   
         #      
         # rotate된 이미지를 덮어씌우기

@@ -1,7 +1,7 @@
 from email import policy
 from gym.envs.registration import register
 import gym
-from gym_env import ShipEnv
+from gym_env_case5 import ShipEnv
 
 register(
     id='ShipEnv-v0',
@@ -26,6 +26,5 @@ for _ in range(2000):
         rewards = 0
         # print("##############True###############")
     
-
     
 env.close()

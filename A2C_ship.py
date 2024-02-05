@@ -4,7 +4,7 @@ import gym
 import tensorflow_probability as tfp
 
 from gym.envs.registration import register
-from gym_env import ShipEnv
+from gym_env_case5 import ShipEnv
 
 register(
     id='ShipEnv-v0',

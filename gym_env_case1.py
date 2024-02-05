@@ -322,6 +322,7 @@ class ShipEnv(gym.Env):
         if not done:
             reward = 0.0
             dist = self.distance(pos_x, pos_y, self.ts_pos_x, self.ts_pos_y)
+            
 
             self.deg = psi
             self.rd = dist
@@ -334,63 +335,64 @@ class ShipEnv(gym.Env):
                 opt_deg += 360
             # print(opt_deg, psi)
             if self.goal_x - 50 <= pos_x <= self.goal_x + 50 and self.goal_y -50 <= pos_y <= self.goal_y:
-                reward = 50
+                reward = 1
                 self.simul_test = True
                 print("####reward#####")
             
-            if pos_y < self.ts_pos_y:
+            ## TS 
+            if pos_y <= self.ts_pos_y:
                 # if cri_idx < 0.66:
                 if dist < 400:
-                    if pos_x <= self.ts_pos_x:
-                        if 0< psi < 60:
+                    if pos_x < self.ts_pos_x:
+                        if 0 < psi < 60:
                             reward = 1
                         else:
-                            reward = -1
+                            reward = 0
                     else:
                         if opt_deg + 20 > 360:
                             if psi > opt_deg -20 or psi < opt_deg + 20 -360:
                                 reward = 1
                             else:
-                                reward = -1
+                                reward = 0
                         else:
                             if opt_deg - 20 < psi < opt_deg +20:
                                 reward = 1
                             else:
-                                reward = -1
+                                reward = 0
                 else:
                     if opt_deg + 20 > 360:
                         if psi > opt_deg -20 or psi < opt_deg + 20 -360:
                             reward = 1
                         else:
-                            reward = -1
+                            reward = 0
                     else:
                         if opt_deg - 20 < psi < opt_deg +20:
                             reward = 1
                         else:
-                            reward = -1
+                            reward = 0
             else:
                 if opt_deg + 20 > 360:
                     if psi > opt_deg -20 or psi < opt_deg + 20 -360:
                         reward = 1
                     else:
-                        reward = -1
+                        reward = 0
                 else:
                     if opt_deg - 20 < psi < opt_deg +20:
                         reward = 1
                     else:
-                        reward = -1
+                        reward = 0
 
-            if self.ts_pos_x -40 < pos_x < self.ts_pos_x + 40 and self.ts_pos_y -40 < pos_y < self.ts_pos_y + 34:
-                reward = -100.0
+            if self.ts_pos_x -50 < pos_x < self.ts_pos_x + 50 and self.ts_pos_y -50 < pos_y < self.ts_pos_y + 50:
+                reward = 0
                     
         else:
             if pos_x == self.goal_x and pos_y== self.goal_y:
-                reward = 60.0
+                reward = 1
                 print("########Reward!######")
             elif self.ts_pos_x -30 < pos_x < self.ts_pos_x + 30 and self.ts_pos_y -30 < pos_y < self.ts_pos_y + 30:
-                reward = -600.0
+                reward = 0
             else:
-                reward = -40
+                reward = 0
 
         self.state = (T_l, T_r, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd)
         # self.state = (self.deg, self.rd)

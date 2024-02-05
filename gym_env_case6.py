@@ -1,63 +1,3 @@
-'''
-    ShipEnv-ActorCritic
-
-    ** 단계별 개발 **
-     step 1. Goal만 있는 환경 => 진행중
-     step 2. Goal + Static Obstacle
-     step 3. Goal + Static + Dynamic Obstacle
-    
-
-    ** 환경 설계 from 우주현 교수님 논문 **
-    
-        1. observation 
-        - 무인 수상선이 추종하는 경로 정보
-        - 동적 장애물 정보
-        - 정적 장애물 정보
-        이 부분에 대해 grid 좌표로써 나타냄
-        => 각, 포지션 (자선), 
-        
-        2. action
-        from Velocity Obstacle + COLREGs Rule
-        - 무인 수상선의 경로 추정
-        - 좌현변침을 통한 장애물 회피
-        - 우현변침을 통한 장애물 회피
-        
-        경로 추정의 경우, 목표 침로각 수식을 활용
-        
-        3. reward
-        - 경로 추정에 따른 양의 보상
-        - 충돌 회피 성공에 따른 양의 보상
-        - 충돌에 따른 음의 보상
-        reward 수식을 활용
-        
-        4. Transition Dynamics
-        논문 5.1 부분을 확인해보면 됨
-        자선: WAM-V 16
-        *** Dynamics 수식 ***
-        u_dot = -1.091 * u + 0.0028 * T_x 
-        v_dot = 0.0161 * v - 0.0052 * r + 0.0002 * T_n
-        r_dot = 8.2861 * v - 0.9860 * r + 0.0307 * T_n
-        
-        차후 원하는 실험 선박에 맞춰 바꿔야함 
-    
-    ** 현재 단계 **
-        - step 1
-        - Dynamics : WAM-V 16
-        - state = [x, y, velocity, angle(rad)]
-    
-    ** 해결된 문제 **
-        - 선박의 운동 모델 반영
-        - 선체 고정 좌표계 + 회전 좌표계 -> 지구 고정 좌표계
-        - math.sin, cos에서 deg가 아닌 rad를 사용
-    
-    
-    ** 해결할 문제 **  
-        - rotate_matrix를 만들어서 아래 한줄 한줄 적은 코드들을 깔끔하게 고칠 수 있t음
-        - action에 따른 Tx, Tn 값 정하기
-        - 동훈이형이 KASS 운동 모델 , COLREGs 반영 (최소 2~3단계)
-    
-'''
-
 import math
 from math import atan2
 # from this import d
@@ -119,9 +59,22 @@ class ShipEnv(gym.Env):
         self.beam = 2.5
 
         ### Target Ship
-        self.ts_pos_x = 310
-        self.ts_pos_y = 650
-        self.ts_psi = self.deg2rad(320)
+        self.ts_pos_x = 700
+        self.ts_pos_y = 500
+        self.ts_psi = self.deg2rad(200)
+
+        # Geometry
+        self.geo_y_1_start = 0
+        self.geo_y_1_width = 250
+        self.geo_y_2_start = 550
+        self.geo_y_2_width = 250
+
+        # Static Obstacle
+        self.static_ob_radius = 30
+        self.static_ob_pos = [470, 400]
+
+
+
         
         '''
         이렇게 변수는 보기 좋게 모아두고 정의할 필요가 있음
@@ -169,6 +122,10 @@ class ShipEnv(gym.Env):
         self.deg = 0
         self.rd = 0
 
+        self.T_l = 10
+        self.T_r = 10
+
+
     def get_init(self):
         ## OS ##
         self.position_x = 100
@@ -183,9 +140,9 @@ class ShipEnv(gym.Env):
         self.X, self.Y = 0, 0
 
         ## TS ##
-        self.ts_pos_x = 200
-        self.ts_pos_y = 700
-        self.ts_psi = self.deg2rad(300)
+        self.ts_pos_x = 700
+        self.ts_pos_y = 500
+        self.ts_psi = self.deg2rad(200)
 
         self.ts_x, self.tx_y, self.ts_angle = 0, 0, 0
         self.ts_u, self.ts_v, self.ts_r = 0, 0, 0
@@ -224,10 +181,8 @@ class ShipEnv(gym.Env):
             T_l = 10
             T_r = 0
 
-        elif action == 5:
-            T_l = 7
-            T_r = 7
-
+        self.T_l = T_l
+        self.T_r = T_r
         self.action = action
         # print(self.action_list)
         # print(self.action)
@@ -269,7 +224,7 @@ class ShipEnv(gym.Env):
         
         ## TS ##
         
-        ts_T_r , ts_T_l = 10,10
+        ts_T_r , ts_T_l = 7,7
         ts_Tx = ts_T_r + ts_T_l
         ts_Tn = (ts_T_l - ts_T_r) * self.beam / 2
 
@@ -309,11 +264,20 @@ class ShipEnv(gym.Env):
         # print("UD", cri.UD())
         # print("UB", cri.UB())
         # print("UK", cri.UK())
+
         ## done ##
+        dist_static = self.distance(pos_x, pos_y, self.static_ob_pos[0], self.static_ob_pos[1])
+        
         if pos_x == self.goal_x and pos_y == self.goal_y:
             done = True
         elif self.ts_pos_x - 30 < pos_x < self.ts_pos_x +30\
              and self.ts_pos_y - 30 < pos_y < self.ts_pos_y + 30:
+            done = True
+        elif self.geo_y_1_start < pos_y < self.geo_y_1_width:
+            done = True
+        elif self.geo_y_2_start < pos_y < self.geo_y_2_start + self.geo_y_2_width:
+            done = True
+        elif dist_static < 2*self.static_ob_radius + 35:
             done = True
         else:
             done = bool(pos_x  >= self.screen_width
@@ -346,7 +310,7 @@ class ShipEnv(gym.Env):
             ## TS 
             if pos_y <= self.ts_pos_y:
                 # if cri_idx < 0.66:
-                if dist < 300:
+                if dist < 400:
                     if pos_x < self.ts_pos_x:
                         if 0 < psi < 60:
                             reward = 1
@@ -388,17 +352,51 @@ class ShipEnv(gym.Env):
 
             if self.ts_pos_x -50 < pos_x < self.ts_pos_x + 50 and self.ts_pos_y -50 < pos_y < self.ts_pos_y + 50:
                 reward = 0
-                    
+
+        ## Static Obstacle
+        # 1. Geo
+            if  self.geo_y_1_start < pos_y <self.geo_y_1_width + 10 \
+                or self.geo_y_2_start -10 < pos_y :
+                reward = 0
+            
+            if pos_y < self.geo_y_1_width + 20:
+                if 180 < psi < 360:
+                    reward = 0
+                else : 
+                    reward = 1
+
+            elif pos_y > self.geo_y_2_start -20:
+                if 0 < psi < 180 :
+                    reward = 0
+                else : 
+                    reward = 1
+        # 2. Static    
+            if dist_static < 180:
+                reward = 0
+                ## Modify this !!
+                if pos_y < self.static_ob_pos[0] +30 : 
+                    if 270< psi < 360:
+                        reward = 1
+                    else:
+                        reward = 0
+                else:
+                    if 0< psi <90:
+                        reward = 1
+                    else:
+                        reward = 0
+
+            
+
         else:
             if pos_x == self.goal_x and pos_y== self.goal_y:
                 reward = 1
                 print("########Reward!######")
-            elif self.ts_pos_x -30 < pos_x < self.ts_pos_x + 30 and self.ts_pos_y -30 < pos_y < self.ts_pos_y + 30:
+            elif self.ts_pos_x -15 < pos_x < self.ts_pos_x + 15 and self.ts_pos_y -15 < pos_y < self.ts_pos_y + 15:
                 reward = 0
             else:
                 reward = 0
 
-        self.state = (T_l, T_r, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd)
+        self.state = (T_l, T_r, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd, self.position_x, self.position_y)
         # self.state = (self.deg, self.rd)
         self.renderer.render_step()
         
@@ -413,7 +411,8 @@ class ShipEnv(gym.Env):
     ):
         super().reset(seed=seed)
         self.get_init()
-        self.state = np.array([self.np_random.uniform(low=90, high=110), self.np_random.uniform(low=390, high=410), 0, 650, 700, -90])
+        # self.state = np.array([self.np_random.uniform(low=90, high=110), self.np_random.uniform(low=390, high=410), 0, 650, 700, -90])
+        self.state = np.array([self.T_l, self.T_r, self.deg, self.ts_pos_x, self.ts_pos_y, self.rd, self.position_x, self.position_y])
         self.action_list= []
         self.simul_test = False
         # low, high = utils.maybe_parse_reset_bounds(options, 660, 660)
@@ -460,7 +459,14 @@ class ShipEnv(gym.Env):
         self.surf.fill((255, 255, 255))
         
         
-         # Path 그리기
+        # Geometry
+        geo_color = (125,125,0)
+        pygame.draw.rect(self.surf, geo_color, [self.geo_y_1_start, 0, self.geo_y_1_width ,screen_width])
+        pygame.draw.rect(self.surf, geo_color, [self.geo_y_2_start, 0, self.geo_y_2_width, screen_width])
+        pygame.draw.circle(self.surf, geo_color, [self.static_ob_pos[0], screen_width - self.static_ob_pos[1]], self.static_ob_radius)
+        
+
+        # Path 그리기
         pygame.draw.line(self.surf, (0,0,255),[screen_height/2,0],[screen_height/2,screen_width],3)
 
        
@@ -515,6 +521,8 @@ class ShipEnv(gym.Env):
         self.screen.blit(self.surf,(0,0))
         self.screen.blit(self.os_img, self.rect)
         self.screen.blit(self.ts_img, self.rect_ts)
+
+
 
         # print("center, self.state[3]: ", center, self.state[3])
         # print(self.action)

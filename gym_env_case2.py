@@ -119,9 +119,9 @@ class ShipEnv(gym.Env):
         self.beam = 2.5
 
         ### Target Ship
-        self.ts_pos_x = 310
-        self.ts_pos_y = 650
-        self.ts_psi = self.deg2rad(320)
+        self.ts_pos_x = 700
+        self.ts_pos_y = 500
+        self.ts_psi = self.deg2rad(200)
         
         '''
         이렇게 변수는 보기 좋게 모아두고 정의할 필요가 있음
@@ -183,9 +183,9 @@ class ShipEnv(gym.Env):
         self.X, self.Y = 0, 0
 
         ## TS ##
-        self.ts_pos_x = 200
-        self.ts_pos_y = 700
-        self.ts_psi = self.deg2rad(300)
+        self.ts_pos_x = 700
+        self.ts_pos_y = 500
+        self.ts_psi = self.deg2rad(200)
 
         self.ts_x, self.tx_y, self.ts_angle = 0, 0, 0
         self.ts_u, self.ts_v, self.ts_r = 0, 0, 0
@@ -223,10 +223,6 @@ class ShipEnv(gym.Env):
         elif action == 4:
             T_l = 10
             T_r = 0
-
-        elif action == 5:
-            T_l = 7
-            T_r = 7
 
         self.action = action
         # print(self.action_list)
@@ -269,7 +265,7 @@ class ShipEnv(gym.Env):
         
         ## TS ##
         
-        ts_T_r , ts_T_l = 10,10
+        ts_T_r , ts_T_l = 7,7
         ts_Tx = ts_T_r + ts_T_l
         ts_Tn = (ts_T_l - ts_T_r) * self.beam / 2
 
@@ -346,7 +342,7 @@ class ShipEnv(gym.Env):
             ## TS 
             if pos_y <= self.ts_pos_y:
                 # if cri_idx < 0.66:
-                if dist < 300:
+                if dist < 400:
                     if pos_x < self.ts_pos_x:
                         if 0 < psi < 60:
                             reward = 1

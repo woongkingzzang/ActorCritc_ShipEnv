@@ -119,9 +119,9 @@ class ShipEnv(gym.Env):
         self.beam = 2.5
 
         ### Target Ship
-        self.ts_pos_x = 310
-        self.ts_pos_y = 650
-        self.ts_psi = self.deg2rad(320)
+        self.ts_pos_x = 265
+        self.ts_pos_y = 400
+        self.ts_psi = self.deg2rad(0)
         
         '''
         이렇게 변수는 보기 좋게 모아두고 정의할 필요가 있음
@@ -183,9 +183,9 @@ class ShipEnv(gym.Env):
         self.X, self.Y = 0, 0
 
         ## TS ##
-        self.ts_pos_x = 200
-        self.ts_pos_y = 700
-        self.ts_psi = self.deg2rad(300)
+        self.ts_pos_x = 265
+        self.ts_pos_y = 400
+        self.ts_psi = self.deg2rad(0)
 
         self.ts_x, self.tx_y, self.ts_angle = 0, 0, 0
         self.ts_u, self.ts_v, self.ts_r = 0, 0, 0
@@ -269,7 +269,7 @@ class ShipEnv(gym.Env):
         
         ## TS ##
         
-        ts_T_r , ts_T_l = 10,10
+        ts_T_r , ts_T_l = 4,4
         ts_Tx = ts_T_r + ts_T_l
         ts_Tn = (ts_T_l - ts_T_r) * self.beam / 2
 

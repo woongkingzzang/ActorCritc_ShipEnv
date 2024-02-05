@@ -27,7 +27,7 @@ from tensorflow.keras import layers
 from typing import Any, List, Sequence, Tuple
 
 from gym.envs.registration import register
-from gym_env import ShipEnv
+from gym_env_case5 import ShipEnv
 from matplotlib import pyplot
 
 from tensorflow.python.client import device_lib
@@ -55,27 +55,43 @@ class ActorCritic(tf.keras.Model):
         num_hidden_units: int):
         
         super().__init__()
-        self.f1 = layers.Dense(num_hidden_units, activation= 'relu')
-        self.f2 = layers.Dense(num_hidden_units/4, activation= 'relu')
-        self.f3 = layers.Dense(num_hidden_units/16, activation= 'relu')
-        # self.f4 = layers.Dense(num_hidden_units/32, activation= 'relu')
-        # self.f5 = layers.Dense(num_hidden_units/16, activation = "relu")
-        self.actor = layers.Dense(num_actions)
+        self.a1 = layers.Dense(32, activation= 'relu')
+        self.a2 = layers.Dense(16, activation= 'relu')
+        # self.a3 = layers.Dense(16, activation= 'relu')
+        # self.a4 = layers.Dense(num_hidden_units/8, activation= 'relu')
+
+
+        self.c1 = layers.Dense(num_hidden_units, activation='relu')
+        self.c2 = layers.Dense(num_hidden_units/2, activation='relu')
+        self.c3 = layers.Dense(num_hidden_units/2, activation='relu')
+        self.c4 = layers.Dense(num_hidden_units/4, activation='relu')
+        # self.c5 = layers.Dense(num_hidden_units/4, activation='relu')
+        # self.c6 = layers.Dense(num_hidden_units/8, activation='relu')
+
+       
+        self.actor = layers.Dense(num_actions, activation= 'softmax')
         self.critic = layers.Dense(1)
 
     def call(self, inputs: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
-        x = self.f1(inputs)
-        x1 = self.f2(x)
-        x2 = self.f3(x1)
-        # x3 = self.f4(x2)
-        # x4 = self.f5(x3)
-        return self.actor(x2), self.critic(x2)
+        x = self.a1(inputs)
+        x1 = self.a2(x)
+        # x2 = self.a3(x1)
+        # x3 = self.a4(x2)
+        
+        y = self.c1(inputs)
+        y1 = self.c2(y)
+        y2 = self.c3(y1)
+        y3 = self.c4(y2)
+        # y4 = self.c5(y3)
+        # y5 = self.c6(y4)
+
+        return self.actor(x1), self.critic(y3)
                                   
 
 
 num_actions = env.action_space.n # env.action_space.n
 # num_actions = 3
-num_hidden_units = 64
+num_hidden_units = 128
 model = ActorCritic(num_actions, num_hidden_units)
 
 
@@ -167,7 +183,7 @@ def get_expected_return(
 
     return returns
 
-huber_loss = tf.keras.losses.Huber(reduction=tf.keras.losses.Reduction.SUM)
+huber_loss = tf.keras.losses.SparseCategoricalCrossentropy(reduction=tf.keras.losses.Reduction.SUM)
 
 def compute_loss(
     action_probs: tf.Tensor,  
@@ -222,8 +238,8 @@ def train_step(
     return episode_reward
 
 
-max_episodes = 100000
-max_steps_per_episode = 1000
+max_episodes = 2500
+max_steps_per_episode = 10000
 
 reward_threshold = 300
 running_reward = 0
@@ -242,7 +258,7 @@ with tqdm.trange(max_episodes) as t:
     episode_reward = int(train_step(
         initial_state, model, optimizer, gamma, max_steps_per_episode))
     
-    running_reward = episode_reward*0.01 + running_reward*0.99
+    running_reward = episode_reward*(1-gamma) + running_reward*gamma
     t.set_description(f'Episode {i}')
     t.set_postfix(
         episode_reward=episode_reward, running_reward=running_reward)
@@ -255,7 +271,7 @@ with tqdm.trange(max_episodes) as t:
         best_list = env.action_list
         print(best_list)
 
-    if episode_reward > 3000:
+    if episode_reward > 250:
         print("#####good#####")
         print(env.action_list)
     # if env.simul_test:
